@@ -393,14 +393,39 @@ export function PatientDashboard() {
   if (loading) return <DashboardSkeleton />;
 
   if (error || !data) {
+    const isAuthError =
+      error?.toLowerCase().includes("not authorized") ||
+      error?.toLowerCase().includes("missing token") ||
+      error?.toLowerCase().includes("token") ||
+      error?.toLowerCase().includes("401");
+
     return (
-      <Card className="mx-auto max-w-lg p-8 text-center">
-        <h2 className="text-base font-bold text-slate-900 dark:text-white">Unable to load patient health records</h2>
-        <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{error || "Please refresh or sign in again."}</p>
-        <button onClick={refetch} className="btn-primary mt-4 text-xs">
-          Try again
-        </button>
-      </Card>
+      <div className="py-12 px-4 flex items-center justify-center">
+        <Card className="w-full max-w-md p-8 text-center shadow-xl border border-slate-200 dark:border-slate-800 rounded-2xl">
+          <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20">
+            <Siren className="h-6 w-6" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+            {isAuthError ? "Sign In Required" : "Unable to load patient health records"}
+          </h2>
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            {isAuthError
+              ? "Your session has expired or you are not signed in. Please log in with your credentials to access your Health Passport dashboard."
+              : error || "Please refresh or sign in again."}
+          </p>
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            {isAuthError ? (
+              <Link href="/auth/login" className="btn-primary w-full text-xs font-semibold py-2.5">
+                Sign In to Dashboard
+              </Link>
+            ) : (
+              <button onClick={refetch} className="btn-primary w-full text-xs font-semibold py-2.5">
+                Try again
+              </button>
+            )}
+          </div>
+        </Card>
+      </div>
     );
   }
 

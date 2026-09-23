@@ -152,9 +152,9 @@ export function Hero() {
               Create Health Passport
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/emergency" className="btn-secondary">
+            <Link href="/dashboard" className="btn-secondary">
               <QrCode className="h-4 w-4" />
-              Scan QR
+              View Dashboard
             </Link>
           </motion.div>
 

@@ -19,6 +19,24 @@ const userSchema = new mongoose.Schema(
     otpExpires: { type: Date, select: false },
     status: { type: String, enum: ["active", "suspended"], default: "active" },
     avatar: { type: String },
+    doctorProfile: {
+      fullName: { type: String },
+      registrationNumber: { type: String },
+      registrationAuthority: { type: String, default: "Tamil Nadu Medical Council" },
+      qualification: { type: String },
+      specialization: { type: String },
+      hospital: { type: String },
+      clinic: { type: String },
+      city: { type: String },
+      state: { type: String, default: "Tamil Nadu" },
+    },
+    verification: {
+      status: { type: String, enum: ["VERIFIED", "PENDING", "REJECTED", "UNAVAILABLE"], default: "PENDING" },
+      verifiedAt: { type: Date },
+      verificationSource: { type: String },
+      verificationReference: { type: String },
+      lastCheckedAt: { type: Date },
+    },
   },
   { timestamps: true }
 );

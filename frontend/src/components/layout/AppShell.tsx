@@ -69,7 +69,6 @@ export function AppShell({ navItems, navGroups, accent, children }: AppShellProp
       category: "EMERGENCY & PASSPORT",
       items: [
         { href: "/dashboard/emergency", label: "Health Passport & QR", icon: QrCode },
-        { href: "/emergency", label: "Scanner Portal", icon: Siren },
       ]
     }
   ];
@@ -265,5 +264,4 @@ export const patientNav: NavItem[] = [
   { href: "/dashboard/reports", label: "Medical Reports", icon: FilePlus2 },
   { href: "/dashboard/summary", label: "Medical History & AI", icon: BrainCircuit, badge: "Clinical" },
   { href: "/dashboard/emergency", label: "Health Passport & QR", icon: QrCode },
-  { href: "/emergency", label: "Scanner Portal", icon: Siren },
 ];

@@ -58,6 +58,8 @@ app.get("/api/health", (req, res) =>
 
 app.use("/api/auth", require("./src/routes/auth"));
 app.use("/api/patients", require("./src/routes/patients"));
+app.use("/api/doctors", require("./src/routes/doctors"));
+app.use("/api/doctor", require("./src/routes/doctorAuth"));
 app.use("/api/health-passport", require("./src/routes/healthPassport").router);
 app.use("/api/uploads", require("./src/routes/uploads"));
 app.use("/api/ai", require("./src/routes/ai"));

@@ -1,34 +1,62 @@
 const QRCode = require("qrcode");
 const crypto = require("crypto");
+const os = require("os");
 
 const QR_SECRET = process.env.JWT_SECRET || "hpa-secure-qr-secret-key-2026";
 const APP_BASE_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+function getLanIp() {
+  try {
+    const nets = os.networkInterfaces();
+    for (const name of Object.keys(nets)) {
+      for (const net of nets[name]) {
+        if (net.family === "IPv4" && !net.internal) {
+          return net.address;
+        }
+      }
+    }
+  } catch (e) {
+    // Fallthrough
+  }
+  return "localhost";
+}
 
 function generateOpaqueToken() {
   return "hpa_tok_" + crypto.randomBytes(16).toString("hex");
 }
 
 function buildPassportUrl(token, req = null) {
+  // Priority 1: Configured APP_URL or NEXT_PUBLIC_APP_URL if explicitly set to LAN URL
+  const envUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
+  if (envUrl && !envUrl.includes("localhost") && !envUrl.includes("127.0.0.1")) {
+    return `${envUrl.replace(/\/$/, "")}/passport/${token}`;
+  }
+
+  // Priority 2: Use request origin / host if request comes from LAN IP
   if (req) {
     const origin = req.get("origin") || req.get("referer");
     if (origin) {
       try {
         const urlObj = new URL(origin);
-        return `${urlObj.origin}/passport/${token}`;
+        if (!urlObj.hostname.includes("localhost") && !urlObj.hostname.includes("127.0.0.1")) {
+          return `${urlObj.origin}/passport/${token}`;
+        }
       } catch (e) {
         // Fallthrough
       }
     }
     const host = req.get("host");
-    if (host) {
+    if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
       const protocol = req.protocol || "http";
       const frontendHost = host.replace(/:5000$/, ":3000");
       return `${protocol}://${frontendHost}/passport/${token}`;
     }
   }
 
-  if (process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.includes("localhost")) {
-    return `${process.env.NEXT_PUBLIC_APP_URL}/passport/${token}`;
+  // Priority 3: Auto-detect active LAN IP for scannable QR generation
+  const lanIp = getLanIp();
+  if (lanIp && lanIp !== "localhost") {
+    return `http://${lanIp}:3000/passport/${token}`;
   }
 
   return `${APP_BASE_URL}/passport/${token}`;
@@ -56,7 +84,6 @@ function buildPayload(patient, token = null, req = null) {
     sig: signature,
   };
 }
-
 
 function verifyPassportPayload(payload) {
   if (!payload || typeof payload !== "object") return false;
@@ -93,4 +120,5 @@ module.exports = {
   buildPayload,
   generateSignature,
   verifyPassportPayload,
+  getLanIp,
 };

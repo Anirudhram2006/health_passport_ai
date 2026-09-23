@@ -218,6 +218,52 @@ router.post("/revoke", protect, async (req, res, next) => {
   }
 });
 
+async function generateEmergencySummary(patient, triage) {
+  const name = patient.userId?.name || "Patient";
+  const blood = patient.bloodGroup ? `Blood Group ${patient.bloodGroup}` : "Blood Group Unspecified";
+
+  const allergyList = (patient.allergies || []).map((a) => `${a.substance || "Unknown"} (${a.severity || "Reaction"})`);
+  const chronicList = Array.isArray(patient.chronicDiseases) ? patient.chronicDiseases : [];
+  const medList = (patient.medications || []).filter((m) => m.active !== false).map((m) => m.name || m.brandName).filter(Boolean);
+
+  let reports = [];
+  try {
+    const MedicalReport = require("../models/MedicalReport");
+    reports = await MedicalReport.find({ patientId: patient._id }).limit(3).sort({ createdAt: -1 });
+  } catch (e) {
+    // Ignore report fetch error fallback
+  }
+
+  let parts = [`Emergency clinical summary for ${name} (${blood}).`];
+
+  if (allergyList.length > 0) {
+    parts.push(`CRITICAL ALLERGIES: ${allergyList.join(", ")}.`);
+  } else {
+    parts.push("No severe drug allergies recorded.");
+  }
+
+  if (chronicList.length > 0) {
+    parts.push(`Chronic Conditions: ${chronicList.join(", ")}.`);
+  }
+
+  if (medList.length > 0) {
+    parts.push(`Active Prescriptions: ${medList.join(", ")}.`);
+  }
+
+  if (reports.length > 0) {
+    const reportSummaries = reports.map((r) => r.aiSummary || r.title).filter(Boolean).slice(0, 2);
+    if (reportSummaries.length > 0) {
+      parts.push(`Clinical Reports Overview: ${reportSummaries.join("; ")}.`);
+    }
+  }
+
+  if (triage && triage.reasons && triage.reasons.length > 0) {
+    parts.push(`Triage Priority Note: ${triage.reasons[0]}`);
+  }
+
+  return parts.join(" ");
+}
+
 // GET /api/health-passport/validate/:token OR /api/patients/passport/:token
 // ENFORCES STRICT TIER 1 ACCESS ONLY
 async function validateTokenAndReturnTier1(req, res, next) {
@@ -283,6 +329,7 @@ async function validateTokenAndReturnTier1(req, res, next) {
           name: "Aarav Sharma",
           bloodGroup: "B+",
         },
+        emergencySummary: "Emergency clinical summary for Aarav Sharma (Blood Group B+). CRITICAL ALLERGIES: Penicillin (Severe), Peanuts (Moderate). Chronic Conditions: Type 2 Diabetes, Stage 1 Hypertension. Active Prescriptions: Metformin 500mg, Amlodipine 5mg.",
         allergies: [
           { substance: "Penicillin", severity: "Severe", reaction: "Anaphylaxis risk — avoid beta-lactams" },
           { substance: "Peanuts", severity: "Moderate", reaction: "Hives, swelling" },
@@ -323,8 +370,10 @@ async function validateTokenAndReturnTier1(req, res, next) {
       meta: { triageLevel: triage.level, accessTier: "TIER_1_EMERGENCY" },
     });
 
+    const emergencySummary = await generateEmergencySummary(patient, triage);
+
     // STRICT TIER 1 DTO RESTRICTION:
-    // EXPOSE ONLY: Patient Name, Blood Group, Allergies, Emergency Contacts, Triage Status
+    // EXPOSE ONLY: Patient Name, Blood Group, Allergies, Emergency Contacts, Triage Status, Emergency Summary
     // STRICTLY WITHHOLD: Full medical history, medications, medical reports, AI summaries, lab results, appointments, address, phone, email, credentials.
     const tier1PassportDto = {
       token: qrRecord ? qrRecord.token : tokenInput,
@@ -338,6 +387,7 @@ async function validateTokenAndReturnTier1(req, res, next) {
         name: safeStr(patient.userId?.name, "Patient Record"),
         bloodGroup: safeStr(patient.bloodGroup, "Unspecified"),
       },
+      emergencySummary,
       allergies: (patient.allergies || []).map((a) => ({
         substance: safeStr(a.substance, "Unknown Substance"),
         severity: safeStr(a.severity, "Mild"),

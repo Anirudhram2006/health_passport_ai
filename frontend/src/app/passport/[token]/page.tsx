@@ -18,6 +18,7 @@ import {
   User,
   Ban,
   FileText,
+  Sparkles,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { downloadPatientSummaryPDF } from "@/lib/pdf";
@@ -34,6 +35,7 @@ interface Tier1PassportDTO {
     name: string;
     bloodGroup: string;
   };
+  emergencySummary?: string;
   allergies: Array<{ substance: string; severity: string; reaction: string }>;
   emergencyContacts: Array<{ name: string; relation: string; phone: string }>;
   triage?: {
@@ -121,7 +123,18 @@ export default function PublicHealthPassportPage() {
       allergies: passport.allergies || [],
       emergencyContacts: passport.emergencyContacts || [],
     };
-    downloadPatientSummaryPDF(patientProfile, [], [], []);
+    const insights: any[] = passport.emergencySummary
+      ? [
+          {
+            id: "emergency",
+            icon: "alert",
+            title: "Emergency Medical Summary",
+            detail: passport.emergencySummary,
+            tone: "warning",
+          },
+        ]
+      : [];
+    downloadPatientSummaryPDF(patientProfile, [], [], insights);
   };
 
   if (loading) {
@@ -162,11 +175,11 @@ export default function PublicHealthPassportPage() {
           </p>
 
           <Link
-            href="/emergency"
+            href="/dashboard"
             className="mt-6 inline-flex items-center justify-center gap-2 w-full rounded-xl bg-slate-800 py-2.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition-colors border border-slate-700"
           >
             <ArrowLeft className="h-4 w-4" />
-            Return to QR Scanner Portal
+            Return to Dashboard
           </Link>
         </div>
       </main>
@@ -177,9 +190,9 @@ export default function PublicHealthPassportPage() {
     <main className="min-h-screen bg-slate-950 py-8 px-4 sm:px-6 text-slate-900 print:bg-white print:py-0 print:px-0">
       {/* Action Bar */}
       <div className="mx-auto max-w-2xl mb-6 flex flex-wrap items-center justify-between gap-3 print:hidden">
-        <Link href="/emergency" className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors">
+        <Link href="/dashboard" className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors">
           <ArrowLeft className="h-4 w-4" />
-          Scanner Portal
+          Dashboard
         </Link>
         <div className="flex items-center gap-2">
           <button
@@ -274,6 +287,18 @@ export default function PublicHealthPassportPage() {
               </div>
             </div>
           </div>
+
+          {/* AI Emergency Medical Summary */}
+          {passport.emergencySummary && (
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2 mb-3 flex items-center gap-1.5">
+                <Sparkles className="h-4 w-4 text-amber-500" /> AI Emergency Medical Summary
+              </h2>
+              <div className="bg-amber-50/80 border border-amber-200/90 p-4 rounded-xl text-xs text-amber-950 leading-relaxed font-medium">
+                {passport.emergencySummary}
+              </div>
+            </div>
+          )}
 
           {/* Known Allergies */}
           <div>

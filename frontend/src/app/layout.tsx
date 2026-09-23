@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import { DoctorAuthProvider } from "@/lib/doctor-auth-context";
 import { ThemeProvider } from "@/lib/theme-provider";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -27,7 +28,9 @@ export default function RootLayout({
     <html lang="en" className={jakarta.variable} suppressHydrationWarning>
       <body>
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <DoctorAuthProvider>{children}</DoctorAuthProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
